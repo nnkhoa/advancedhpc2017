@@ -12,5 +12,5 @@ Students are expected to:
 Student Info
 =======================
 
-* Name: *YourNameHere*
-* ID: *YourIdHere*
+* Name: Nguyen Nhu Khoa
+* ID: M.ICT.06.003
