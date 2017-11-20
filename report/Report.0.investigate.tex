@@ -1,0 +1,116 @@
+\documentclass[a4paper,11pt, notitlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[top=2.5cm, bottom=3cm, left=3cm, right=3cm, headsep=14pt]{geometry}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[export]{adjustbox}
+
+\usepackage{datetime}
+\usepackage{float}
+\usepackage{a4wide}
+\usepackage[super]{nth}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{fancyvrb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{caption}
+
+\usepackage{natbib}
+\bibliographystyle{unsrt}
+
+
+\setlength{\parskip}{0.5em}
+
+\begin{document}
+
+\title{
+\vspace{-3cm}
+Report 0 - Investigate}
+\author{Nguyen Nhu Khoa - M.ICT.06.003}
+\maketitle
+
+\pagestyle{plain}
+\setcounter{page}{1}
+
+\vspace{-1cm}
+\newdate{date}{31}{10}{2017}
+\noindent
+
+\section{Compiling the Labwork project}
+
+To compile the Labwork project:
+
+\begin{enumerate}
+	\item make a 'build' folder, using \verb|mkdir build|
+	\item \verb|cd build|
+	\item run CMAKE: \verb|cmake ..|
+	\item run make: \verb|make -j|
+\end{enumerate}
+
+\section{Compilation prerequisites}
+
+\begin{enumerate}
+	\item Linux/OSX Operating System
+	\item CUDA SKD 7+
+	\item CUDA Compiler \verb|nvcc| and C compiler \verb|gcc 4.8+|
+	\item JPEG encode/decode library \verb|libjpeg|
+	\item CMAKE (optional)
+\end{enumerate}
+
+\section{Output}
+
+\begin{verbatim}
+khoann@ictserver2:~/advancedhpc2017/labwork$ mkdir build
+khoann@ictserver2:~/advancedhpc2017/labwork$ cd build/
+khoann@ictserver2:~/advancedhpc2017/labwork/build$ cmake ..
+-- The C compiler identification is GNU 4.9.2
+-- The CXX compiler identification is GNU 4.9.2
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Looking for pthread_create
+-- Looking for pthread_create - not found
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Found CUDA: /usr/local/cuda (found version "8.0") 
+-- Try OpenMP C flag = [-fopenmp]
+-- Performing Test OpenMP_FLAG_DETECTED
+-- Performing Test OpenMP_FLAG_DETECTED - Success
+-- Try OpenMP CXX flag = [-fopenmp]
+-- Performing Test OpenMP_FLAG_DETECTED
+-- Performing Test OpenMP_FLAG_DETECTED - Success
+-- Found OpenMP: -fopenmp  
+-- Found JPEG: /usr/lib/x86_64-linux-gnu/libjpeg.so  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/khoann/advancedhpc2017/labwork/build
+khoann@ictserver2:~/advancedhpc2017/labwork/build$ make -j
+[ 25%] Building NVCC (Device) object CMakeFiles
+				/labwork.dir/src/labwork_generated_labwork.cu.o
+[ 50%] Building NVCC (Device) object CMakeFiles
+				/labwork.dir/src/labwork_generated_jpegloader.cu.o
+Scanning dependencies of target labwork
+[ 75%] Building CXX object CMakeFiles/labwork.dir/src/timer.cpp.o
+[100%] Linking CXX executable labwork
+[100%] Built target labwork
+\end{verbatim}
+
+\end{document}
