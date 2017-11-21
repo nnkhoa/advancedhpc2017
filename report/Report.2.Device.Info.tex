@@ -1,0 +1,67 @@
+\documentclass[a4paper,11pt, notitlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[top=2.5cm, bottom=3cm, left=3cm, right=3cm, headsep=14pt]{geometry}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[export]{adjustbox}
+
+\usepackage{datetime}
+\usepackage{float}
+\usepackage{a4wide}
+\usepackage[super]{nth}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{fancyvrb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{caption}
+
+\usepackage{natbib}
+\bibliographystyle{unsrt}
+
+
+\setlength{\parskip}{0.5em}
+
+\begin{document}
+
+\title{
+\vspace{-3cm}
+Report 2 - GPU Devices Info}
+\author{Nguyen Nhu Khoa - M.ICT.06.003}
+\maketitle
+
+\pagestyle{plain}
+\setcounter{page}{1}
+
+\vspace{-1cm}
+\newdate{date}{31}{10}{2017}
+\noindent
+
+\begin{verbatim}
+number of GPU: 2
+
+Name: Tesla K40c
+Max Threads per Block: 1024
+Total Core: 2880
+Clock Rate: 745000
+Multi Processor Count: 15
+Warp Size: 32
+Memory Clock Rate: 3004000
+Memory Bus Width: 384
+Memory Bandwidth: 1153536000
+
+Name: GeForce GTX TITAN Black
+Max Threads per Block: 1024
+Total Core: 2880
+Clock Rate: 980000
+Multi Processor Count: 15
+Warp Size: 32
+Memory Clock Rate: 3500000
+Memory Bus Width: 384
+Memory Bandwidth: 1344000000
+\end{verbatim}
+
+\end{document}
