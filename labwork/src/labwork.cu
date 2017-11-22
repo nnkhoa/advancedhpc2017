@@ -177,7 +177,14 @@ void Labwork::labwork3_GPU() {
     int pixelCount = inputImage->width * inputImage->height;
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
 
-    char *blockSizeEnv = getenv("LW3_CUDA_BLOCK_SIZE");
+    char *blockSizeEnv = getenv("CUDA_BLOCK_SIZE");
+
+    if(!blockSizeEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use >CUDA_BLOCK_SIZE ./labwork ...\n");
+        return;
+    }
+
     int blockSize = atoi(blockSizeEnv);
     long numBlock = pixelCount/blockSize;
 
