@@ -106,7 +106,7 @@ void Labwork::labwork1_OpenMP() {
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
 	#pragma omp parallel for schedule(dynamic)
-	for (int i = 0; i < pixelCount; i++) {
+	    for (int i = 0; i < pixelCount; i++) {
             outputImage[i * 3] = (char) (((int) inputImage->buffer[i * 3] + (int) inputImage->buffer[i * 3 + 1] +
                                           (int) inputImage->buffer[i * 3 + 2]) / 3);
             outputImage[i * 3 + 1] = outputImage[i * 3];
@@ -165,7 +165,21 @@ void Labwork::labwork2_GPU() {
 }
 
 void Labwork::labwork3_GPU() {
-   
+    int pixelCount = inputImage->width * inputImage->height;
+    outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
+
+    char *cuInput; *cuOutput;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
+    
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    
+    grayscaleConvert()<<<1, 2>>>(cuInput, cuOutput, pixelCount);
+
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    
+    cudaFree(cuOutput);
+    cudaFree(cuInput);
 }
 
 void Labwork::labwork4_GPU() {
@@ -194,4 +208,15 @@ void Labwork::labwork9_GPU() {
 
 void Labwork::labwork10_GPU() {
 
+}
+
+__global__ void grayscaleConvert(char* input, char* output, int imagePixelCount){
+    for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
+        for (int i = 0; i < imagePixelCount; i++) {
+            output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+                                          (int) inputImage[i * 3 + 2]) / 3);
+            output[i * 3 + 1] = output[i * 3];
+            output[i * 3 + 2] = output[i * 3];
+        }
+    }
 }
