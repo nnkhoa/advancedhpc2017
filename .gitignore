@@ -3,3 +3,5 @@ labwork/build/
 *pdf
 *log
 *out
+.DS_Store
+*/.DS_Store
