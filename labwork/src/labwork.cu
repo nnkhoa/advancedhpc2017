@@ -204,7 +204,31 @@ void Labwork::labwork3_GPU() {
 }
 
 void Labwork::labwork4_GPU() {
-   
+    int pixelCount = inputImage->width * inputImage->height;
+    outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
+
+    if(!blockSizeEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size ./labwork ...\n");
+        return;
+    }
+
+    dim3 gridSize = dime3(8,8);
+    dim3 blockSize = dime3(32,32);
+
+    char *cuInput, *cuOutput;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
+    
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    
+    for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
+        grayscaleConvert<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount);
+    }
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    
+    cudaFree(cuOutput);
+    cudaFree(cuInput);   
 }
 
 void Labwork::labwork5_GPU() {
