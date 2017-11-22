@@ -181,7 +181,7 @@ void Labwork::labwork3_GPU() {
 
     if(!blockSizeEnv){
         printf("No Environment Variable specified\n");
-        printf("Please use >CUDA_BLOCK_SIZE ./labwork ...\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size ./labwork ...\n");
         return;
     }
 
