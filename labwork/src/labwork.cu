@@ -167,10 +167,12 @@ void Labwork::labwork2_GPU() {
 __global__ void grayscaleConvert(char* input, char* output, int imagePixelCount){
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     
-    output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
-                                  (int) input[i * 3 + 2]) / 3);
-    output[i * 3 + 1] = output[i * 3];
-    output[i * 3 + 2] = output[i * 3];
+    if(i < pixelCount){
+        output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+                                      (int) input[i * 3 + 2]) / 3);
+        output[i * 3 + 1] = output[i * 3];
+        output[i * 3 + 2] = output[i * 3];
+    }
 }
 
 void Labwork::labwork3_GPU() {
