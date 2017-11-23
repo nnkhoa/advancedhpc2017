@@ -165,12 +165,12 @@ void Labwork::labwork2_GPU() {
 }
 
 __global__ void grayscaleConvert(char* input, char* output, int imagePixelCount){
-        for (int i = 0; i < imagePixelCount; i++) {
-            output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
-                                          (int) input[i * 3 + 2]) / 3);
-            output[i * 3 + 1] = output[i * 3];
-            output[i * 3 + 2] = output[i * 3];
-        }
+    int i = threadIdx.x + blockIdx.x + blockDim.x;
+    
+    output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+                                  (int) input[i * 3 + 2]) / 3);
+    output[i * 3 + 1] = output[i * 3];
+    output[i * 3 + 2] = output[i * 3];
 }
 
 void Labwork::labwork3_GPU() {
@@ -203,6 +203,11 @@ void Labwork::labwork3_GPU() {
     cudaFree(cuInput);
 }
 
+__global__ void grayscaleConvert2D(char* input, char* output, int imagePixelCount){
+    int i = threadIdx.x + blockIdx.x + blockDim.x;
+    int j = threadIdx.y + blockIdx.y + blockDim.y;
+}
+
 void Labwork::labwork4_GPU() {
     int pixelCount = inputImage->width * inputImage->height;
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
@@ -223,7 +228,7 @@ void Labwork::labwork4_GPU() {
     cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
     
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
-        grayscaleConvert<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount);
+        grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount);
     }
     cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
     
