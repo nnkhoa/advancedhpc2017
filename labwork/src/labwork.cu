@@ -165,7 +165,7 @@ void Labwork::labwork2_GPU() {
 }
 
 __global__ void grayscaleConvert(char* input, char* output, int imagePixelCount){
-    int i = threadIdx.x + blockIdx.x + blockDim.x;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
     
     output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
                                   (int) input[i * 3 + 2]) / 3);
