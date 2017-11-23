@@ -212,14 +212,8 @@ void Labwork::labwork4_GPU() {
     int pixelCount = inputImage->width * inputImage->height;
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
 
-    if(!blockSizeEnv){
-        printf("No Environment Variable specified\n");
-        printf("Please use > CUDA_BLOCK_SIZE=block_size ./labwork ...\n");
-        return;
-    }
-
-    dim3 gridSize = dime3(8,8);
-    dim3 blockSize = dime3(32,32);
+    dim3 gridSize = dim3(8,8);
+    dim3 blockSize = dime(32,32);
 
     char *cuInput, *cuOutput;
     cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
