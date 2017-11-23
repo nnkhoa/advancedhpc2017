@@ -168,10 +168,10 @@ __global__ void grayscaleConvert(char* input, char* output, int imagePixelCount)
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     
     if(i < imagePixelCount){
-        output[i * 3] = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+
+        char g = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
                                       (int) input[i * 3 + 2]) / 3);
-        output[i * 3 + 1] = output[i * 3];
-        output[i * 3 + 2] = output[i * 3];
+        output[i * 3] =  output[i * 3 + 1] = output[i * 3 + 2] = g;
     }
 }
 
@@ -188,34 +188,67 @@ void Labwork::labwork3_GPU() {
     }
 
     int blockSize = atoi(blockSizeEnv);
-    long numBlock = pixelCount/blockSize;
-
-    char *cuInput, *cuOutput;
-    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
-    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
+    int numBlock = pixelCount/blockSize;
     
-    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    char *cuInput, *cuOutput;
+
+    if(cudaMalloc(&cuInput, pixelCount*3*sizeof(char)) != cudaSuccess){
+    	fprintf(stderr, "Cuda Memory Alloc error!\n");
+	return;
+    }
+    if(cudaMalloc(&cuOutput, pixelCount*3*sizeof(char)) != cudaSuccess){
+    	fprintf(stderr, "Cuda Memory Alloc error!\n");
+	return;
+    }
+    
+    if(cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice) != cudaSuccess){
+    	fprintf(stderr, "Copy input buffer error!\n");
+	return;
+    }
     
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
     	grayscaleConvert<<<numBlock, blockSize>>>(cuInput, cuOutput, pixelCount);
     }
-    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    if(cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost) != cudaSuccess){
+    	fprintf(stderr, "Copy output buffer error!\n");
+	return;
+    }
     
     cudaFree(cuOutput);
     cudaFree(cuInput);
 }
 
-__global__ void grayscaleConvert2D(char* input, char* output, int imagePixelCount){
-    int i = threadIdx.x + blockIdx.x + blockDim.x;
-    int j = threadIdx.y + blockIdx.y + blockDim.y;
+__global__ void grayscaleConvert2D(char* input, char* output, int imagePixelCount, int imageWidth){
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+    int i = row * imageWidth + threadIdx.x +blockIdx.x * blockDim.x;
+
+    if(i < imagePixelCount){
+
+        char g = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+                                      (int) input[i * 3 + 2]) / 3);
+        output[i * 3] =  output[i * 3 + 1] = output[i * 3 + 2] = g;
+    }
 }
 
 void Labwork::labwork4_GPU() {
     int pixelCount = inputImage->width * inputImage->height;
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
 
-    dim3 gridSize = dim3(8,8);
-    dim3 blockSize = dim3(32,32);
+    char *blockSizeEnv = getenv("CUDA_BLOCK_SIZE");
+
+    if(!blockSizeEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size ./labwork ...\n");
+        return;
+    }
+
+    int blockSizeValue = atoi(blockSizeEnv);
+    
+    int gridWidth = (inputImage->width + blockSizeValue - 1)/blockSizeValue;
+    int gridHeight = (inputImage->height + blockSizeValue - 1)/blockSizeValue;
+
+    dim3 gridSize = dim3(gridWidth,gridHeight);
+    dim3 blockSize = dim3(blockSizeValue,blockSizeValue);
 
     char *cuInput, *cuOutput;
     cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
@@ -224,7 +257,7 @@ void Labwork::labwork4_GPU() {
     cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
     
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
-        grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount);
+        grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount, inputImage->width);
     }
     cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
     
