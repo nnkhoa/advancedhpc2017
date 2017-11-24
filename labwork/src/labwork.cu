@@ -338,8 +338,61 @@ void Labwork::labwork5_GPU() {
     cudaFree(cuGray);
 }
 
-void Labwork::labwork6_GPU() {
+void binaryValue(unsigned char *pixel, int threshold){
+    if(pixel > threshold){
+        pixel = 255;
+    } else
+        pixel = 0;
+}
 
+__global__ void binarizationGPU(unsigned char *input, unsigned char *output, int pixelCount,int imageWidth, int threshold){
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+    int i = row * imageWidth + threadIdx.x +blockIdx.x * blockDim.x;
+
+    if(i < imagePixelCount){
+
+        unsigned char g = (unsigned char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+                                      (int) input[i * 3 + 2]) / 3);
+        binaryValue(&g, threshold);
+        output[i * 3] =  output[i * 3 + 1] = output[i * 3 + 2] = g;
+    }
+}
+
+void Labwork::labwork6_GPU() {
+    int pixelCount = inputImage->width * inputImage->height;
+    outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
+
+    char *blockSizeEnv = getenv("CUDA_BLOCK_SIZE");
+    char *thresholdEnv = getenv("BINARY_THRESHOLD");
+
+    if(!blockSizeEnv || !thresholdEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size BINARY_THRESHOLD=value ./labwork ...\n");
+        return;
+    }
+
+    int blockSizeValue = atoi(blockSizeEnv);
+    int thresholdValue = atoi(thresholdEnv);
+    
+    int gridWidth = (inputImage->width + blockSizeValue - 1)/blockSizeValue;
+    int gridHeight = (inputImage->height + blockSizeValue - 1)/blockSizeValue;
+
+    dim3 gridSize = dim3(gridWidth,gridHeight);
+    dim3 blockSize = dim3(blockSizeValue,blockSizeValue);
+
+    unsigned char *cuInput, *cuOutput;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(unsigned char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(unsigned char));
+    
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(unsigned char), cudaMemcpyHostToDevice);
+    
+    for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
+        binarizationGPU<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount, inputImage->width, thresholdValue);
+    }
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+    
+    cudaFree(cuOutput);
+    cudaFree(cuInput);
 }
 
 void Labwork::labwork7_GPU() {
