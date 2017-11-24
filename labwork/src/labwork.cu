@@ -278,19 +278,19 @@ __global__ void gaussianConvolution(char *input, char *output, int imageWidth, i
     int row = threadIdx.y + blockIdx.y * blockDim.y;
     int col = threadIdx.x +blockIdx.x * blockDim.x;
     
-    for(int y = -3; x <= 3; x ++){
-        for(int x = -3; y <= 3; y++){
+    for(int y = -3; y <= 3; y++){
+        for(int x = -3; x <= 3; x++){
             int i = col + x;
             int j = row + y;
 
             if( i < 0 || i >= imageWidth || j < 0 || j >= imageHeight)
                 continue;
 
-            tid = j * imageWidth + i;
+            int tid = j * imageWidth + i;
             unsigned char pixelValue = input[tid];
-            int coefficient = gKernel[x+3][y+3];
+            int coefficient = gKernel[y+3][x+3];
             sum += pixelValue*coefficient;
-            c+ coefficient;
+            c += coefficient;
         }
     }
     sum /= c;
@@ -333,7 +333,7 @@ void Labwork::labwork5_GPU() {
     
     cudaFree(cuOutput);
     cudaFree(cuInput);
-
+    cudaFree(cuGray);
 }
 
 void Labwork::labwork6_GPU() {
