@@ -218,13 +218,13 @@ void Labwork::labwork3_GPU() {
     cudaFree(cuInput);
 }
 
-__global__ void grayscaleConvert2D(char* input, char* output, int imagePixelCount, int imageWidth){
+__global__ void grayscaleConvert2D(unsigned char* input, unsigned char* output, int imagePixelCount, int imageWidth){
     int row = threadIdx.y + blockIdx.y * blockDim.y;
     int i = row * imageWidth + threadIdx.x +blockIdx.x * blockDim.x;
 
     if(i < imagePixelCount){
 
-        char g = (char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
+        unsigned char g = (unsigned char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
                                       (int) input[i * 3 + 2]) / 3);
         output[i * 3] =  output[i * 3 + 1] = output[i * 3 + 2] = g;
     }
@@ -250,22 +250,22 @@ void Labwork::labwork4_GPU() {
     dim3 gridSize = dim3(gridWidth,gridHeight);
     dim3 blockSize = dim3(blockSizeValue,blockSizeValue);
 
-    char *cuInput, *cuOutput;
-    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
-    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
+    unsigned char *cuInput, *cuOutput;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(unsigned char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(unsigned char));
     
-    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(unsigned char), cudaMemcpyHostToDevice);
     
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
         grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount, inputImage->width);
     }
-    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(unsigned char), cudaMemcpyDeviceToHost);
     
     cudaFree(cuOutput);
     cudaFree(cuInput);   
 }
 
-__global__ void gaussianConvolution(char *input, char *output, int imageWidth, int imageHeight){
+__global__ void gaussianConvolution(unsigned char *input, unsigned char *output, int imageWidth, int imageHeight, int pixelCount){
     int gKernel[7][7] = {{0, 0, 1, 2, 1, 0, 0},
                         {0, 3, 13, 22, 13, 3, 0},
                         {1, 13, 59, 97, 59, 13, 1},
@@ -277,7 +277,7 @@ __global__ void gaussianConvolution(char *input, char *output, int imageWidth, i
     int c = 0;
     int row = threadIdx.y + blockIdx.y * blockDim.y;
     int col = threadIdx.x +blockIdx.x * blockDim.x;
-    
+    if (col >= imageWidth) return;
     for(int y = -3; y <= 3; y++){
         for(int x = -3; x <= 3; x++){
             int i = col + x;
@@ -287,7 +287,7 @@ __global__ void gaussianConvolution(char *input, char *output, int imageWidth, i
                 continue;
 
             int tid = j * imageWidth + i;
-            unsigned char pixelValue = input[tid];
+            unsigned char pixelValue = input[tid*3];
             int coefficient = gKernel[y+3][x+3];
             sum += pixelValue*coefficient;
             c += coefficient;
@@ -295,7 +295,9 @@ __global__ void gaussianConvolution(char *input, char *output, int imageWidth, i
     }
     sum /= c;
     int postOut = row * imageWidth + col;
-    output[postOut * 3] = output[postOut * 3 + 1] = output[postOut * 3 + 2] = sum;
+    if(postOut < pixelCount){
+    	output[postOut * 3] = output[postOut * 3 + 1] = output[postOut * 3 + 2] = sum;
+    }
 }
 
 void Labwork::labwork5_GPU() {
@@ -318,18 +320,18 @@ void Labwork::labwork5_GPU() {
     dim3 gridSize = dim3(gridWidth,gridHeight);
     dim3 blockSize = dim3(blockSizeValue,blockSizeValue);
 
-    char *cuInput, *cuOutput, *cuGray;
-    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
-    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
-    cudaMalloc(&cuGray, pixelCount*3*sizeof(char));
+    unsigned char *cuInput, *cuOutput, *cuGray;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(unsigned char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(unsigned char));
+    cudaMalloc(&cuGray, pixelCount*3*sizeof(unsigned char));
 
-    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(unsigned char), cudaMemcpyHostToDevice);
     
     grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuGray, pixelCount, inputImage->width);
 
-    gaussianConvolution<<<gridSize, blockSize>>>(cuGray, cuOutput, inputImage->width, inputImage->height);
+    gaussianConvolution<<<gridSize, blockSize>>>(cuGray, cuOutput, inputImage->width, inputImage->height, pixelCount);
     
-    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(unsigned char), cudaMemcpyDeviceToHost);
     
     cudaFree(cuOutput);
     cudaFree(cuInput);
