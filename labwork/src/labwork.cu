@@ -265,8 +265,75 @@ void Labwork::labwork4_GPU() {
     cudaFree(cuInput);   
 }
 
-void Labwork::labwork5_GPU() {
+__global__ void gaussianConvolution(char *input, char *output, int imageWidth, int imageHeight){
+    int gKernel[7][7] = {{0, 0, 1, 2, 1, 0, 0},
+                        {0, 3, 13, 22, 13, 3, 0},
+                        {1, 13, 59, 97, 59, 13, 1},
+                        {2, 22, 97, 159, 97, 22, 2},
+                        {1, 13, 59, 97, 59, 13, 1},
+                        {0, 3, 13, 22, 13, 3, 0},
+                        {0, 0, 1, 2, 1, 0, 0}};
+    int sum = 0;
+    int c = 0;
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+    int col = threadIdx.x +blockIdx.x * blockDim.x;
     
+    for(int y = -3; x <= 3; x ++){
+        for(int x = -3; y <= 3; y++){
+            int i = col + x;
+            int j = row + y;
+
+            if( i < 0 || i >= imageWidth || j < 0 || j >= imageHeight)
+                continue;
+
+            tid = j * imageWidth + i;
+            unsigned char pixelValue = input[tid];
+            int coefficient = gKernel[x+3][y+3];
+            sum += pixelValue*coefficient;
+            c+ coefficient;
+        }
+    }
+    sum /= c;
+    int postOut = row * imageWidth + col;
+    output[postOut * 3] = output[postOut * 3 + 1] = output[postOut * 3 + 2] = sum;
+}
+
+void Labwork::labwork5_GPU() {
+
+    int pixelCount = inputImage->width * inputImage->height;
+    outputImage = static_cast<char *>(malloc(pixelCount * 3));
+
+    char *blockSizeEnv = getenv("CUDA_BLOCK_SIZE");
+
+    if(!blockSizeEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size ./labwork ...\n");
+        return;
+    }
+    int blockSizeValue = atoi(blockSizeEnv);
+    
+    int gridWidth = (inputImage->width + blockSizeValue - 1)/blockSizeValue;
+    int gridHeight = (inputImage->height + blockSizeValue - 1)/blockSizeValue;
+
+    dim3 gridSize = dim3(gridWidth,gridHeight);
+    dim3 blockSize = dim3(blockSizeValue,blockSizeValue);
+
+    char *cuInput, *cuOutput, *cuGray;
+    cudaMalloc(&cuInput, pixelCount*3*sizeof(char));
+    cudaMalloc(&cuOutput, pixelCount*3*sizeof(char));
+    cudaMalloc(&cuGray, pixelCount*3*sizeof(char));
+
+    cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(char), cudaMemcpyHostToDevice);
+    
+    grayscaleConvert2D<<<gridSize, blockSize>>>(cuInput, cuGray, pixelCount, inputImage->width);
+
+    gaussianConvolution<<<gridSize, blockSize>>>(cuGray, cuOutput, inputImage->width, inputImage->height);
+    
+    cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(char), cudaMemcpyDeviceToHost);
+    
+    cudaFree(cuOutput);
+    cudaFree(cuInput);
+
 }
 
 void Labwork::labwork6_GPU() {
