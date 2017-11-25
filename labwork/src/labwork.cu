@@ -358,11 +358,29 @@ __global__ void binarizationGPU(unsigned char *input, unsigned char *output, int
     }
 }
 
+__device__ unsigned char brightnessFunction(unsigned char pixel, int brightnessIncr){
+    pixel += (unsigned char)brightnessIncr;
+    return pixel;
+}
+
+__global__ void brightnessIncrease(unsigned char *input, unsigned char *output, int pixelCount,int imageWidth, int brightnessIncr){
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+    int i = row * imageWidth + threadIdx.x +blockIdx.x * blockDim.x;
+
+    if(i < pixelCount){
+        output[i*3] = brightnessFunction(input[i*3], brightnessIncr);
+        output[i*3 + 1] = brightnessFunction(input[i*3 + 1], brightnessIncr);
+        output[i*3 + 2] = brightnessFunction(input[i*3 + 2], brightnessIncr);
+    }
+}
+
 void Labwork::labwork6_GPU() {
     int pixelCount = inputImage->width * inputImage->height;
     outputImage = static_cast<char *>(malloc(pixelCount * 3)); 
 
     char *blockSizeEnv = getenv("CUDA_BLOCK_SIZE");
+
+    /* 6A - BINARIZATION
     char *thresholdEnv = getenv("BINARY_THRESHOLD");
 
     if(!blockSizeEnv || !thresholdEnv){
@@ -370,9 +388,19 @@ void Labwork::labwork6_GPU() {
         printf("Please use > CUDA_BLOCK_SIZE=block_size BINARY_THRESHOLD=value ./labwork ...\n");
         return;
     }
+    int thresholdValue = atoi(thresholdEnv);
+    */
+
+    char *brightnessEnv = getenv("BRIGHTNESS_ENV");
+
+    if(!blockSizeEnv || !brightnessEnv){
+        printf("No Environment Variable specified\n");
+        printf("Please use > CUDA_BLOCK_SIZE=block_size BRIGHTNESS_ENV=value ./labwork ...\n");
+        return;
+    }
+    int brightnessIncr = atoi(brightnessEnv);
 
     int blockSizeValue = atoi(blockSizeEnv);
-    int thresholdValue = atoi(thresholdEnv);
     
     int gridWidth = (inputImage->width + blockSizeValue - 1)/blockSizeValue;
     int gridHeight = (inputImage->height + blockSizeValue - 1)/blockSizeValue;
@@ -387,7 +415,10 @@ void Labwork::labwork6_GPU() {
     cudaMemcpy(cuInput, inputImage->buffer, pixelCount*3*sizeof(unsigned char), cudaMemcpyHostToDevice);
     
     for (int j = 0; j < 100; j++) {     // let's do it 100 times, otherwise it's too fast!
+        /* 6A - BINARIZATION
         binarizationGPU<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount, inputImage->width, thresholdValue);
+        */
+        brightnessIncrease<<<gridSize, blockSize>>>(cuInput, cuOutput, pixelCount, inputImage->width, brightnessIncr);
     }
     cudaMemcpy(outputImage, cuOutput, pixelCount*3*sizeof(unsigned char), cudaMemcpyDeviceToHost);
     
