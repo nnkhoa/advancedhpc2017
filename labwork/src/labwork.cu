@@ -359,8 +359,12 @@ __global__ void binarizationGPU(unsigned char *input, unsigned char *output, int
 }
 
 __device__ unsigned char brightnessFunction(unsigned char pixel, int brightnessIncr){
-    pixel += (unsigned char)brightnessIncr;
-    return pixel;
+    int temp = (int)pixel + brightnessIncr;
+    if (temp > 255)
+	    temp = 255;
+    else if (temp < 0)
+	    temp = 0;
+    return (unsigned char) temp;
 }
 
 __global__ void brightnessIncrease(unsigned char *input, unsigned char *output, int pixelCount,int imageWidth, int brightnessIncr){
