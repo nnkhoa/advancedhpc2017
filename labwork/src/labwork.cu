@@ -338,18 +338,18 @@ void Labwork::labwork5_GPU() {
     cudaFree(cuGray);
 }
 
-void binaryValue(unsigned char *pixel, int threshold){
-    if(pixel > threshold){
-        pixel = 255;
+__device__ void binaryValue(unsigned char *pixel, int threshold){
+    if((int)*pixel > threshold){
+        *pixel = (unsigned char)255;
     } else
-        pixel = 0;
+        *pixel = 0;
 }
 
 __global__ void binarizationGPU(unsigned char *input, unsigned char *output, int pixelCount,int imageWidth, int threshold){
     int row = threadIdx.y + blockIdx.y * blockDim.y;
     int i = row * imageWidth + threadIdx.x +blockIdx.x * blockDim.x;
 
-    if(i < imagePixelCount){
+    if(i < pixelCount){
 
         unsigned char g = (unsigned char) (((int) input[i * 3] + (int) input[i * 3 + 1] +
                                       (int) input[i * 3 + 2]) / 3);
